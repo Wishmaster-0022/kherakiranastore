@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Retail Store & POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+    }
+    .bg-theme { background-color: var(--primary); }
+    .text-theme { color: var(--primary); }
+    .border-theme { border-color: var(--primary); }
+    .ring-theme:focus { --tw-ring-color: var(--primary); }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="bg-white shadow-sm sticky top-0 z-30 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+      <!-- Store Branding -->
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-theme flex items-center justify-center text-white font-bold text-xl shadow-md">
+          <i class="fa-solid fa-store"></i>
+        </div>
+        <div>
+          <h1 id="uiStoreName" class="font-extrabold text-xl text-slate-900 leading-tight">Apna Supermart</h1>
+          <p id="uiStoreTagline" class="text-xs text-slate-500">Best Quality Daily Needs & Groceries</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center bg-slate-100 p-1.5 rounded-xl gap-1 overflow-x-auto max-w-full">
+        <button onclick="switchTab('shop')" id="tab-shop" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-white shadow-sm text-slate-900 flex items-center gap-1.5">
+          <i class="fa-solid fa-bag-shopping text-theme"></i> <span>Customer Store</span>
+        </button>
+        <button onclick="switchTab('orders')" id="tab-orders" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5 relative">
+          <i class="fa-solid fa-bell"></i> <span>Orders</span>
+          <span id="pendingOrderBadge" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+        </button>
+        <button onclick="switchTab('inventory')" id="tab-inventory" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+          <i class="fa-solid fa-boxes-stacked"></i> <span>Stock & Profit</span>
+        </button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+          <i class="fa-solid fa-sliders"></i> <span>Edit Website</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ANNOUNCEMENT BANNER -->
+  <div id="uiBannerBar" class="bg-theme text-white text-center py-2 px-4 text-xs sm:text-sm font-medium shadow-inner">
+    <span id="uiBannerText">⚡ Free Home Delivery on orders above ₹299! Order Online Now.</span>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+    <!-- ================= 1. CUSTOMER STORE VIEW ================= -->
+    <section id="view-shop" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Products List (Left 2 cols) -->
+        <div class="lg:col-span-2 space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <div>
+              <h2 class="text-lg font-bold text-slate-800">Available Products</h2>
+              <p class="text-xs text-slate-500">Select items to place an instant order</p>
+            </div>
+            <div class="relative">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+              <input type="text" id="searchInput" oninput="renderShop()" placeholder="Search items..." class="pl-9 pr-4 py-1.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 w-full sm:w-56">
+            </div>
+          </div>
+
+          <div id="shopProductsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Cart & Checkout Box (Right 1 col) -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sticky top-24">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <h3 class="font-bold text-base flex items-center gap-2">
+                <i class="fa-solid fa-cart-shopping text-theme"></i> Your Order Cart
+              </h3>
+              <button onclick="clearCart()" class="text-xs text-rose-500 hover:underline">Clear</button>
+            </div>
+
+            <div id="cartItemsList" class="space-y-3 max-h-60 overflow-y-auto pr-1">
+              <!-- Cart items here -->
+            </div>
+
+            <div class="border-t border-slate-100 mt-4 pt-4 space-y-2">
+              <div class="flex justify-between text-sm text-slate-600">
+                <span>Total Items:</span>
+                <span id="cartTotalCount" class="font-semibold">0</span>
+              </div>
+              <div class="flex justify-between text-lg font-extrabold text-slate-900">
+                <span>Grand Total:</span>
+                <span id="cartTotalPrice">₹0</span>
+              </div>
+            </div>
+
+            <!-- Customer Details Form -->
+            <form onsubmit="placeOrder(event)" class="mt-5 space-y-3 border-t border-slate-100 pt-4">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Customer Details</p>
+              <input type="text" id="custName" required placeholder="Your Full Name *" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none">
+              <input type="tel" id="custPhone" required placeholder="Phone / WhatsApp Number *" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none">
+              <select id="custOrderType" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none bg-white">
+                <option value="Home Delivery">🛵 Home Delivery</option>
+                <option value="Store Pickup">🏪 Store Pickup (Self)</option>
+                <option value="In-Store Counter">⚡ Direct Counter Sale (POS)</option>
+              </select>
+              <input type="text" id="custAddress" placeholder="Delivery Address / Note (Optional)" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none">
+              
+              <button type="submit" class="w-full py-3 rounded-xl bg-theme text-white font-bold text-sm shadow-md hover:opacity-95 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-paper-plane"></i> Place Order Now
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= 2. ORDERS MANAGEMENT VIEW ================= -->
+    <section id="view-orders" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">Incoming & Past Orders</h2>
+          <p class="text-xs text-slate-500">Jab aap order "Accept" karenge, tabhi stock katega aur Profit/Revenue mein judega.</p>
+        </div>
+        <div class="flex gap-2">
+          <span class="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold">
+            Pending: <span id="statPendingOrders">0</span>
+          </span>
+          <span class="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold">
+            Completed: <span id="statCompletedOrders">0</span>
+          </span>
+        </div>
+      </div>
+
+      <div id="ordersListContainer" class="space-y-4">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ================= 3. INVENTORY & BUY/SELL LEDGER VIEW ================= -->
+    <section id="view-inventory" class="hidden space-y-6">
+      
+      <!-- Financial Summary Cards (Buy vs Sell Info) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <p class="text-xs font-semibold text-slate-400 uppercase">Total Purchase (Stock Value)</p>
+          <h3 id="finTotalPurchase" class="text-2xl font-extrabold text-slate-800 mt-1">₹0</h3>
+          <p class="text-[11px] text-slate-500 mt-1">Abhi dukan mein rakhe maal ki khareed</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <p class="text-xs font-semibold text-slate-400 uppercase">Total Sales (Revenue)</p>
+          <h3 id="finTotalSales" class="text-2xl font-extrabold text-indigo-600 mt-1">₹0</h3>
+          <p class="text-[11px] text-slate-500 mt-1">Accepted orders se kul bikri</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <p class="text-xs font-semibold text-slate-400 uppercase">Net Profit (Kamai)</p>
+          <h3 id="finTotalProfit" class="text-2xl font-extrabold text-emerald-600 mt-1">₹0</h3>
+          <p class="text-[11px] text-slate-500 mt-1">Sell Price minus Buy Price</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <p class="text-xs font-semibold text-slate-400 uppercase">Low Stock Alert</p>
+          <h3 id="finLowStock" class="text-2xl font-extrabold text-rose-600 mt-1">0 Items</h3>
+          <p class="text-[11px] text-slate-500 mt-1">5 unit se kam bache products</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Add New Product / Buy Stock Form -->
+        <div class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 h-fit">
+          <h3 class="font-bold text-base mb-1 flex items-center gap-2">
+            <i class="fa-solid fa-plus-circle text-theme"></i> Add Product / Buy Stock
+          </h3>
+          <p class="text-xs text-slate-500 mb-4">Naya saaman dukan mein jodein (Khareed aur Bikri rate ke sath)</p>
+
+          <form onsubmit="addNewProduct(event)" class="space-y-3">
+            <div>
+              <label class="text-xs font-semibold text-slate-600">Product Name *</label>
+              <input type="text" id="prodName" required placeholder="e.g. Fortune Oil 1L" class="w-full mt-1 px-3 py-2 text-sm border border-slate-200 rounded-xl">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-600">Category / Unit *</label>
+              <input type="text" id="prodCategory" required placeholder="e.g. Grocery • 1 Packet" class="w-full mt-1 px-3 py-2 text-sm border border-slate-200 rounded-xl">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-semibold text-slate-600">Buy Price (Khareed ₹) *</label>
+                <input type="number" id="prodBuy" required min="1" placeholder="₹110" class="w-full mt-1 px-3 py-2 text-sm border border-slate-200 rounded-xl">
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-slate-600">Sell Price (Bikri ₹) *</label>
+                <input type="number" id="prodSell" required min="1" placeholder="₹145" class="w-full mt-1 px-3 py-2 text-sm border border-slate-200 rounded-xl">
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-600">Opening Stock Quantity *</label>
+              <input type="number" id="prodStock" required min="1" placeholder="e.g. 25" class="w-full mt-1 px-3 py-2 text-sm border border-slate-200 rounded-xl">
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-theme text-white rounded-xl font-bold text-sm shadow hover:opacity-95 transition">
+              + Save Product to Inventory
+            </button>
+          </form>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-base">Current Store Inventory (Buy/Sell Sheet)</h3>
+            <span class="text-xs text-slate-400">Click +Stock to buy more</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-[11px] uppercase text-slate-400">
+                  <th class="py-2.5 px-2">Item</th>
+                  <th class="py-2.5 px-2">Buy (Khareed)</th>
+                  <th class="py-2.5 px-2">Sell (Bikri)</th>
+                  <th class="py-2.5 px-2">Margin/Unit</th>
+                  <th class="py-2.5 px-2">Stock Left</th>
+                  <th class="py-2.5 px-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody" class="divide-y divide-slate-100 text-sm">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 4. LIVE WEBSITE EDITOR VIEW ================= -->
+    <section id="view-settings" class="hidden max-w-2xl mx-auto space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+        <div class="border-b border-slate-100 pb-4">
+          <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles text-theme"></i> Customize Your Website Live
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">Yahan se aap bina code chhede apni website ka naam, offer banner aur color badal sakte hain.</p>
+        </div>
+
+        <form onsubmit="saveWebsiteSettings(event)" class="space-y-4">
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Store / Website Name</label>
+            <input type="text" id="setStoreName" required class="w-full mt-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium">
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Store Tagline (Subtitle)</label>
+            <input type="text" id="setStoreTagline" required class="w-full mt-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm">
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Top Offer Banner Text</label>
+            <input type="text" id="setBannerText" required class="w-full mt-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-bold text-slate-600 uppercase">Owner WhatsApp / Phone</label>
+              <input type="text" id="setOwnerPhone" class="w-full mt-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-600 uppercase">Brand Theme Color</label>
+              <div class="flex items-center gap-3 mt-1">
+                <input type="color" id="setThemeColor" class="h-10 w-16 rounded-lg cursor-pointer border border-slate-200">
+                <span class="text-xs text-slate-500">Pick any color for buttons & bars</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 flex flex-wrap justify-between items-center gap-3 border-t border-slate-100">
+            <button type="button" onclick="resetDemoData()" class="px-4 py-2.5 rounded-xl border border-rose-200 text-rose-600 text-xs font-bold hover:bg-rose-50">
+              Reset All Demo Data
+            </button>
+            <button type="submit" class="px-6 py-2.5 rounded-xl bg-theme text-white text-sm font-bold shadow-md hover:opacity-95">
+              Save & Apply Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500 mt-10">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+      <p>© <span id="footerStoreName" class="font-semibold text-slate-700">Apna Supermart</span> — Powered by Smart Retail POS</p>
+      <p>Contact / Support: <span id="footerPhone" class="font-bold text-slate-700">+91 98765 43210</span></p>
+    </div>
+  </footer>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastBox" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg text-sm font-medium hidden z-50 flex items-center gap-2">
+    <i class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toastMsg">Updated!</span>
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT -->
+  <script>
+    // --- DEFAULT INITIAL DATA ---
+    const defaultSettings = {
+      storeName: "Apna Supermart & Kirana",
+      tagline: "Wholesale & Retail Daily Needs Store",
+      banner: "⚡ Free Home Delivery on orders above ₹299! Call or Order Online.",
+      phone: "+91 9876543210",
+      themeColor: "#4f46e5"
+    };
+
+    const defaultProducts = [
+      { id: 1, name: "Aashirvaad Shudh Chakki Atta (5kg)", category: "Grocery • 5 Kg Bag", buyPrice: 215, sellPrice: 255, stock: 18 },
+      { id: 2, name: "Fortune Sunlite Refined Oil (1L)", category: "Cooking Oil • 1 Litre", buyPrice: 118, sellPrice: 145, stock: 25 },
+      { id: 3, name: "Tata Tea Gold (500g)", category: "Beverages • 500g Pack", buyPrice: 240, sellPrice: 285, stock: 12 },
+      { id: 4, name: "Maggi 2-Minute Noodles (12 Pack)", category: "Snacks • Family Pack", buyPrice: 138, sellPrice: 165, stock: 4 },
+      { id: 5, name: "Amul Taaza Toned Milk (1L Tetra)", category: "Dairy • 1 Litre", buyPrice: 64, sellPrice: 72, stock: 30 },
+      { id: 6, name: "Surf Excel Easy Wash (1.5kg)", category: "Household • 1.5 Kg", buyPrice: 160, sellPrice: 199, stock: 10 }
+    ];
+
+    const defaultOrders = [
+      {
+        id: "ORD-1001",
+        customer: "Rahul Sharma",
+        phone: "9811223344",
+        type: "Home Delivery",
+        address: "Flat 402, Tower B, Main Road",
+        time: "Today, 11:20 AM",
+        status: "Pending",
+        items: [
+          { id: 1, name: "Aashirvaad Shudh Chakki Atta (5kg)", qty: 1, sellPrice: 255, buyPrice: 215 },
+          { id: 2, name: "Fortune Sunlite Refined Oil (1L)", qty: 2, sellPrice: 145, buyPrice: 118 }
+        ],
+        totalAmount: 545,
+        totalProfit: 94
+      }
+    ];
+
+    // --- LOAD STATE FROM LOCALSTORAGE ---
+    let settings = JSON.parse(localStorage.getItem('retail_settings')) || defaultSettings;
+    let products = JSON.parse(localStorage.getItem('retail_products')) || defaultProducts;
+    let orders = JSON.parse(localStorage.getItem('retail_orders')) || defaultOrders;
+    let cart = [];
+
+    function saveData() {
+      localStorage.setItem('retail_settings', JSON.stringify(settings));
+      localStorage.setItem('retail_products', JSON.stringify(products));
+      localStorage.setItem('retail_orders', JSON.stringify(orders));
+      updateAllViews();
+    }
+
+    function showToast(msg) {
+      const box = document.getElementById('toastBox');
+      document.getElementById('toastMsg').innerText = msg;
+      box.classList.remove('hidden');
+      setTimeout(() => box.classList.add('hidden'), 2800);
+    }
+
+    // --- TAB NAVIGATION ---
+    function switchTab(tabName) {
+      ['shop', 'orders', 'inventory', 'settings'].forEach(t => {
+        document.getElementById('view-' + t).classList.add('hidden');
+        const btn = document.getElementById('tab-' + t);
+        btn.classList.remove('bg-white', 'shadow-sm', 'text-slate-900');
+        btn.classList.add('text-slate-600');
+      });
+
+      document.getElementById('view-' + tabName).classList.remove('hidden');
+      const activeBtn = document.getElementById('tab-' + tabName);
+      activeBtn.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
+      activeBtn.classList.remove('text-slate-600');
+      updateAllViews();
+    }
+
+    // --- APPLY WEBSITE CUSTOMIZATION ---
+    function applySettingsUI() {
+      document.documentElement.style.setProperty('--primary', settings.themeColor);
+      document.getElementById('uiStoreName').innerText = settings.storeName;
+      document.getElementById('uiStoreTagline').innerText = settings.tagline;
+      document.getElementById('uiBannerText').innerText = settings.banner;
+      document.getElementById('footerStoreName').innerText = settings.storeName;
+      document.getElementById('footerPhone').innerText = settings.phone;
+
+      // Populate form inputs
+      document.getElementById('setStoreName').value = settings.storeName;
+      document.getElementById('setStoreTagline').value = settings.tagline;
+      document.getElementById('setBannerText').value = settings.banner;
+      document.getElementById('setOwnerPhone').value = settings.phone;
+      document.getElementById('setThemeColor').value = settings.themeColor;
+    }
+
+    function saveWebsiteSettings(e) {
+      e.preventDefault();
+      settings.storeName = document.getElementById('setStoreName').value.trim();
+      settings.tagline = document.getElementById('setStoreTagline').value.trim();
+      settings.banner = document.getElementById('setBannerText').value.trim();
+      settings.phone = document.getElementById('setOwnerPhone').value.trim();
+      settings.themeColor = document.getElementById('setThemeColor').value;
+      saveData();
+      showToast("Website design & info updated!");
+    }
+
+    // --- RENDER CUSTOMER SHOP ---
+    function renderShop() {
+      const query = (document.getElementById('searchInput')?.value || '').toLowerCase();
+      const grid = document.getElementById('shopProductsGrid');
+      const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query));
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-2 bg-white p-8 rounded-2xl text-center text-slate-400">No matching items found.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const outOfStock = p.stock <= 0;
+        return `
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between hover:shadow-md transition">
+            <div>
+              <div class="flex justify-between items-start gap-2">
+                <span class="text-[11px] font-semibold px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full">${p.category}</span>
+                <span class="text-xs font-bold ${p.stock > 5 ? 'text-emerald-600' : p.stock > 0 ? 'text-amber-600' : 'text-rose-600'}">
+                  ${p.stock > 0 ? `${p.stock} in stock` : 'Out of Stock'}
+                </span>
+              </div>
+              <h4 class="font-bold text-slate-800 text-base mt-2">${p.name}</h4>
+            </div>
+            <div class="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+              <div>
+                <span class="text-xs text-slate-400 block">Price</span>
+                <span class="text-lg font-extrabold text-slate-900">₹${p.sellPrice}</span>
+              </div>
+              <button onclick="addToCart(${p.id})" ${outOfStock ? 'disabled' : ''} 
+                class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${outOfStock ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-theme text-white shadow-sm hover:opacity-90'}">
+                <i class="fa-solid fa-plus"></i> Add to Cart
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- CART FUNCTIONS ---
+    function addToCart(prodId) {
+      const prod = products.find(p => p.id === prodId);
+      if (!prod || prod.stock <= 0) return;
+
+      const existing = cart.find(item => item.id === prodId);
+      if (existing) {
+        if (existing.qty + 1 > prod.stock) {
+          showToast("Maximum available stock reached!");
+          return;
+        }
+        existing.qty += 1;
+      } else {
+        cart.push({ id: prod.id, name: prod.name, sellPrice: prod.sellPrice, buyPrice: prod.buyPrice, qty: 1 });
+      }
+      renderCart();
+      showToast(`${prod.name} added to cart!`);
+    }
+
+    function changeCartQty(prodId, delta) {
+      const idx = cart.findIndex(i => i.id === prodId);
+      if (idx === -1) return;
+      const prod = products.find(p => p.id === prodId);
+      const newQty = cart[idx].qty + delta;
+
+      if (newQty <= 0) {
+        cart.splice(idx, 1);
+      } else if (prod && newQty > prod.stock) {
+        showToast("Not enough stock available!");
+      } else {
+        cart[idx].qty = newQty;
+      }
+      renderCart();
+    }
+
+    function clearCart() {
+      cart = [];
+      renderCart();
+    }
+
+    function renderCart() {
+      const list = document.getElementById('cartItemsList');
+      if (cart.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Your cart is empty. Add products from the left!</p>`;
+        document.getElementById('cartTotalCount').innerText = "0";
+        document.getElementById('cartTotalPrice').innerText = "₹0";
+        return;
+      }
+
+      let totalItems = 0;
+      let totalPrice = 0;
+
+      list.innerHTML = cart.map(item => {
+        totalItems += item.qty;
+        totalPrice += item.qty * item.sellPrice;
+        return `
+          <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            <div class="pr-2">
+              <p class="text-xs font-bold text-slate-800 line-clamp-1">${item.name}</p>
+              <p class="text-[11px] text-slate-500">₹${item.sellPrice} × ${item.qty} = <b class="text-slate-800">₹${item.sellPrice * item.qty}</b></p>
+            </div>
+            <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-1.5 py-0.5">
+              <button onclick="changeCartQty(${item.id}, -1)" class="text-xs font-bold px-1.5 text-slate-600 hover:text-rose-600">-</button>
+              <span class="text-xs font-bold w-4 text-center">${item.qty}</span>
+              <button onclick="changeCartQty(${item.id}, 1)" class="text-xs font-bold px-1.5 text-slate-600 hover:text-emerald-600">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('cartTotalCount').innerText = totalItems;
+      document.getElementById('cartTotalPrice').innerText = "₹" + totalPrice;
+    }
+
+    function placeOrder(e) {
+      e.preventDefault();
+      if (cart.length === 0) {
+        showToast("Please add at least 1 item to cart first!");
+        return;
+      }
+
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+      const type = document.getElementById('custOrderType').value;
+      const address = document.getElementById('custAddress').value.trim() || "N/A";
+
+      let totalAmount = 0;
+      let totalProfit = 0;
+      cart.forEach(i => {
+        totalAmount += i.sellPrice * i.qty;
+        totalProfit += (i.sellPrice - i.buyPrice) * i.qty;
+      });
+
+      const newOrder = {
+        id: "ORD-" + Math.floor(1000 + Math.random() * 9000),
+        customer: name,
+        phone: phone,
+        type: type,
+        address: address,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: "Pending",
+        items: JSON.parse(JSON.stringify(cart)),
+        totalAmount,
+        totalProfit
+      };
+
+      orders.unshift(newOrder);
+      cart = [];
+      e.target.reset();
+      saveData();
+      showToast("Order Submitted! Check 'Orders' tab to accept it.");
+    }
+
+    // --- RENDER & MANAGE ORDERS ---
+    function renderOrders() {
+      const container = document.getElementById('ordersListContainer');
+      const pendingCount = orders.filter(o => o.status === 'Pending').length;
+      const completedCount = orders.filter(o => o.status === 'Accepted').length;
+
+      document.getElementById('statPendingOrders').innerText = pendingCount;
+      document.getElementById('statCompletedOrders').innerText = completedCount;
+
+      const badge = document.getElementById('pendingOrderBadge');
+      if (pendingCount > 0) {
+        badge.innerText = pendingCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      if (orders.length === 0) {
+        container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400 border border-slate-200">No orders received yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = orders.map(o => {
+        const badgeColor = o.status === 'Pending' 
+          ? 'bg-amber-100 text-amber-800 border-amber-200' 
+          : o.status === 'Accepted' 
+          ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+          : 'bg-rose-100 text-rose-700 border-rose-200';
+
+        const itemsHtml = o.items.map(i => `<span class="inline-block bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-lg mr-1.5 mb-1.5 font-medium">${i.name} <b>× ${i.qty}</b> (₹${i.sellPrice * i.qty})</span>`).join('');
+
+        return `
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between gap-4">
+            <div class="space-y-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-extrabold text-sm text-slate-900">${o.id}</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold border ${badgeColor}">${o.status}</span>
+                <span class="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full font-semibold">${o.type}</span>
+                <span class="text-xs text-slate-400"><i class="fa-regular fa-clock"></i> ${o.time}</span>
+              </div>
+              <p class="text-sm font-bold text-slate-800">
+                <i class="fa-solid fa-user text-slate-400 mr-1"></i> ${o.customer} 
+                <span class="font-normal text-slate-500 ml-2"><i class="fa-solid fa-phone text-slate-400 mr-1"></i> ${o.phone}</span>
+              </p>
+              <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> ${o.address}</p>
+              <div class="pt-1">${itemsHtml}</div>
+            </div>
+
+            <div class="flex flex-row md:flex-col justify-between items-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100 min-w-[180px]">
+              <div class="text-left md:text-right">
+                <span class="text-xs text-slate-400 block">Order Total</span>
+                <span class="text-xl font-extrabold text-slate-900">₹${o.totalAmount}</span>
+                <span class="text-[11px] text-emerald-600 font-semibold block">Est. Profit: +₹${o.totalProfit}</span>
+              </div>
+
+              ${o.status === 'Pending' ? `
+                <div class="flex gap-2 mt-2">
+                  <button onclick="handleOrderStatus('${o.id}', 'Rejected')" class="px-3 py-2 rounded-xl border border-rose-200 text-rose-600 text-xs font-bold hover:bg-rose-50">
+                    Reject
+                  </button>
+                  <button onclick="handleOrderStatus('${o.id}', 'Accepted')" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow hover:bg-emerald-700 flex items-center gap-1">
+                    <i class="fa-solid fa-check"></i> Accept Order
+                  </button>
+                </div>
+              ` : `
+                <span class="text-xs font-semibold text-slate-400 mt-2">Order ${o.status}</span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleOrderStatus(orderId, newStatus) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order || order.status !== 'Pending') return;
+
+      if (newStatus === 'Accepted') {
+        // Deduct stock
+        for (let item of order.items) {
+          const prod = products.find(p => p.id === item.id);
+          if (prod) {
+            prod.stock = Math.max(0, prod.stock - item.qty);
+          }
+        }
+        order.status = 'Accepted';
+        showToast(`Order ${orderId} Accepted! Stock & Profit updated.`);
+      } else {
+        order.status = 'Rejected';
+        showToast(`Order ${orderId} Rejected.`);
+      }
+      saveData();
+    }
+
+    // --- RENDER INVENTORY & BUY/SELL STATS ---
+    function renderInventory() {
+      // Calculate Financials
+      let stockPurchaseValue = 0;
+      let lowStockItems = 0;
+      products.forEach(p => {
+        stockPurchaseValue += p.buyPrice * p.stock;
+        if (p.stock < 5) lowStockItems++;
+      });
+
+      let totalSales = 0;
+      let totalProfit = 0;
+      orders.filter(o => o.status === 'Accepted').forEach(o => {
+        totalSales += o.totalAmount;
+        totalProfit += o.totalProfit;
+      });
+
+      document.getElementById('finTotalPurchase').innerText = "₹" + stockPurchaseValue.toLocaleString('en-IN');
+      document.getElementById('finTotalSales').innerText = "₹" + totalSales.toLocaleString('en-IN');
+      document.getElementById('finTotalProfit').innerText = "₹" + totalProfit.toLocaleString('en-IN');
+      document.getElementById('finLowStock').innerText = lowStockItems + " Items";
+
+      const tbody = document.getElementById('inventoryTableBody');
+      tbody.innerHTML = products.map(p => {
+        const margin = p.sellPrice - p.buyPrice;
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-2">
+              <p class="font-bold text-slate-800">${p.name}</p>
+              <p class="text-[11px] text-slate-400">${p.category}</p>
+            </td>
+            <td class="py-3 px-2 font-semibold text-slate-600">₹${p.buyPrice}</td>
+            <td class="py-3 px-2 font-bold text-slate-900">₹${p.sellPrice}</td>
+            <td class="py-3 px-2 font-bold text-emerald-600">+₹${margin}</td>
+            <td class="py-3 px-2">
+              <span class="px-2 py-0.5 rounded-full text-xs font-bold ${p.stock < 5 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'}">
+                ${p.stock} units
+              </span>
+            </td>
+            <td class="py-3 px-2 text-right space-x-1 whitespace-nowrap">
+              <button onclick="refillStock(${p.id})" class="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100">
+                + Buy Stock
+              </button>
+              <button onclick="deleteProduct(${p.id})" class="px-2 py-1 text-rose-500 hover:bg-rose-50 rounded-lg text-xs">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function addNewProduct(e) {
+      e.preventDefault();
+      const name = document.getElementById('prodName').value.trim();
+      const category = document.getElementById('prodCategory').value.trim();
+      const buyPrice = Number(document.getElementById('prodBuy').value);
+      const sellPrice = Number(document.getElementById('prodSell').value);
+      const stock = Number(document.getElementById('prodStock').value);
+
+      products.unshift({
+        id: Date.now(),
+        name,
+        category,
+        buyPrice,
+        sellPrice,
+        stock
+      });
+
+      e.target.reset();
+      saveData();
+      showToast("New product added to store!");
+    }
+
+    function refillStock(prodId) {
+      const prod = products.find(p => p.id === prodId);
+      if (!prod) return;
+      const addQty = prompt(`Kitna naya stock khareeda hai "${prod.name}" ka? (Enter Quantity):`, "10");
+      const num = parseInt(addQty);
+      if (!isNaN(num) && num > 0) {
+        prod.stock += num;
+        saveData();
+        showToast(`${num} units added to ${prod.name}!`);
+      }
+    }
+
+    function deleteProduct(prodId) {
+      products = products.filter(p => p.id !== prodId);
+      saveData();
+      showToast("Product removed.");
+    }
+
+    function resetDemoData() {
+      localStorage.removeItem('retail_settings');
+      localStorage.removeItem('retail_products');
+      localStorage.removeItem('retail_orders');
+      settings = JSON.parse(JSON.stringify(defaultSettings));
+      products = JSON.parse(JSON.stringify(defaultProducts));
+      orders = JSON.parse(JSON.stringify(defaultOrders));
+      cart = [];
+      updateAllViews();
+      showToast("All demo data reset to default!");
+    }
+
+    function updateAllViews() {
+      applySettingsUI();
+      renderShop();
+      renderCart();
+      renderOrders();
+      renderInventory();
+    }
+
+    // Initialize on Page Load
+    updateAllViews();
+  </script>
+</body>
+</html>
